@@ -1,0 +1,22 @@
+{
+  "name": "kinkybot",
+  "version": "1.0.0",
+  "description": "Discord Bot",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jafesu/kinkyBot.git"
+  },
+  "author": "Jafesu",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Jafesu/kinkyBot/issues"
+  },
+  "homepage": "https://github.com/Jafesu/kinkyBot#readme",
+  "dependencies": {
+    "discord": "^0.8.2"
+  }
+}
