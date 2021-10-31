@@ -3,6 +3,7 @@ import requests
 import string
 import aiohttp
 from discord.utils import get
+from discord.utils import find
 from discord.ext import commands, tasks
 import json
 import mysql.connector as mysql
@@ -74,9 +75,9 @@ async def on_message(message):
             msg.add_field(name="Emote Name", value=name,
                           inline=False)
             emoteMsg = await message.channel.send(embed=msg)
-            approve = get_emote(client.guilds, ':approve:')
+            approve = get_emote(client.guilds, ':yes:')
             await emoteMsg.add_reaction(approve)
-            deny = get_emote(client.guilds, ':deny:')
+            deny = get_emote(client.guilds, ':no:')
             await emoteMsg.add_reaction(deny)
 
             newMsg = discord.Embed(title="Emote Vote",
@@ -115,85 +116,97 @@ async def on_message(message):
 
 
             await emoteMsg.edit(embed=newMsg)
+            await message.delete()
 
         elif sub.startswith('approve'):
-            id = sub.split('approve')[1]
-            id = id.translate({ord(c): None for c in string.whitespace})
-            url=''
-            name=''
-            msg = await getmsg(message.channel, id)
+            if "staff" in [y.name.lower() for y in message.author.roles]:
+                id = sub.split('approve')[1]
+                id = id.translate({ord(c): None for c in string.whitespace})
+                url=''
+                name=''
+                # msg = await getmsg(message.channel, id)
 
-            try:
-                cnx = mysql.connect(user=sql['user'], password=sql['pass'],
-                                              host=sql['host'],
-                                              database=sql['database'])
-            except mysql.Error as err:
-                if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                    print("Something is wrong with your user name or password")
-                elif err.errno == errorcode.ER_BAD_DB_ERROR:
-                    print("Database does not exist")
+                try:
+                    cnx = mysql.connect(user=sql['user'], password=sql['pass'],
+                                                  host=sql['host'],
+                                                  database=sql['database'])
+                except mysql.Error as err:
+                    if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                        print("Something is wrong with your user name or password")
+                    elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                        print("Database does not exist")
+                    else:
+                        print(err)
                 else:
-                    print(err)
+                    cursor = cnx.cursor()
+
+                    voteQuery = f"SELECT emoteName,emoteLink FROM emoteVotes WHERE (emoteID = '{id}' AND guildID = '{guildID}')"
+                    voteData = (id)
+                    print(voteQuery)
+                    cursor.execute(voteQuery)
+
+                    if cursor.rowcount > 0:
+                        for (emoteName, emoteLink) in cursor:
+                            name = emoteName
+                            url = emoteLink
+
+
+
+                        cursor.close()
+                        cnx.close()
+
+                        print(name)
+                        print(url)
+
+                        # newMsg = discord.Embed(title="Emote Vote",
+                        #                        description=str(message.author.mention) + " Is requesting this emote be added",
+                        #                        color=discord.Color.blue())
+                        # newMsg.set_thumbnail(url=url)
+                        # newMsg.add_field(name="Emote Name", value=name,
+                        #                  inline=False)
+                        # newMsg.add_field(name="Vote ID", value=id)
+                        # newMsg.add_field(name="Vote Status", value="Closed")
+                        # await msg.edit(embed=newMsg)
+                        try:
+                            fname = url.split('/')[-1]
+                            response = requests.get(url)
+
+                            open(fname, 'wb').write(response.content)
+                            fSize = int(os.path.getsize(fname))
+                            if fSize > 262144:
+                                emote = Image.open(fname)
+                                emote = emote.resize((128, 128), Image.ANTIALIAS)
+                                emote.save(fname, optimize=True, quality=85)
+                                fSize = int(os.path.getsize(fname))
+                                print(fSize)
+                                with open(fname, 'rb') as fd:
+                                    emoji = await message.guild.create_custom_emoji(name=name, image=fd.read())
+
+                                await message.channel.send("Successfully added the emoji {0.name} <{1}:{0.name}:{0.id}>!"
+                                                           .format(emoji,"a" if emoji.animated else ""))
+
+                            else:
+                                emoji = await message.channel.guild.create_custom_emoji(name=name, image=response.content)
+                                await message.channel.send("Successfully added the emoji {0.name} <{1}:{0.name}:{0.id}>!"
+                                                           .format(emoji, "a" if emoji.animated else ""))
+                        except:
+                            await message.channel.send("failed to add the emoji")
+                        await message.delete()
+                    else:
+                        await message.channel.send("Invalid VoteID")
             else:
-                cursor = cnx.cursor()
-
-                voteQuery = f"SELECT emoteName,emoteLink FROM emoteVotes WHERE (emoteID = '{id}' AND guildID = '{guildID}')"
-                voteData = (id)
-                print(voteQuery)
-                cursor.execute(voteQuery)
-
-                for (emoteName,emoteLink) in cursor:
-                    name = emoteName
-                    url = emoteLink
-
-
-                cursor.close()
-                cnx.close()
-
-            print(name)
-            print(url)
-
-            # newMsg = discord.Embed(title="Emote Vote",
-            #                        description=str(message.author.mention) + " Is requesting this emote be added",
-            #                        color=discord.Color.blue())
-            # newMsg.set_thumbnail(url=url)
-            # newMsg.add_field(name="Emote Name", value=name,
-            #                  inline=False)
-            # newMsg.add_field(name="Vote ID", value=id)
-            # newMsg.add_field(name="Vote Status", value="Closed")
-            # await msg.edit(embed=newMsg)
-            try:
-                fname = url.split('/')[-1]
-                response = requests.get(url)
-
-                open(fname, 'wb').write(response.content)
-                fSize = int(os.path.getsize(fname))
-                if fSize > 262144:
-                    emote = Image.open(fname)
-                    emote = emote.resize((128, 128), Image.ANTIALIAS)
-                    emote.save(fname, optimize=True, quality=85)
-                    fSize = int(os.path.getsize(fname))
-                    print(fSize)
-                    with open(fname, 'rb') as fd:
-                        emoji = await message.guild.create_custom_emoji(name=name, image=fd.read())
-
-                    await message.channel.send("Successfully added the emoji {0.name} <{1}:{0.name}:{0.id}>!"
-                                               .format(emoji,"a" if emoji.animated else ""))
-
-                else:
-                    emoji = await message.channel.guild.create_custom_emoji(name=name, image=response.content)
-                    await message.channel.send("Successfully added the emoji {0.name} <{1}:{0.name}:{0.id}>!"
-                                               .format(emoji, "a" if emoji.animated else ""))
-            except:
-                await message.channel.send("failed to add the emoji {0.name} <{1}:{0.name}:{0.id}>!"
-                                           .format(emoji, "a" if emoji.animated else ""))
-
+                await message.channel.send("This Command is reserved for Staff Members")
 
 
         elif sub.startswith('deny'):
-            id = sub.split('deny')[1]
-            id = id.translate({ord(c): None for c in string.whitespace})
-            await message.channel.send(f"Request to add the emoji (Vote ID: {id} denied! ")
+            # role = discord.utils.find(lambda r: r.name == 'Staff', message.server.roles)
+            if "staff" in [y.name.lower() for y in message.author.roles]:
+                id = sub.split('deny')[1]
+                id = id.translate({ord(c): None for c in string.whitespace})
+                await message.channel.send(f"Request to add the emoji (Vote ID: {id} denied! ")
+                await message.delete()
+            else:
+                await message.channel.send("This Command is reserved for Staff Members")
 
         else:
             msg = discord.Embed(title="Emote help",
@@ -203,12 +216,32 @@ async def on_message(message):
                                 color=discord.Color.blue())
             await message.channel.send(embed=msg)
 
+    if message.content.startswith('--ask'):
+        sub = message.content.split('--ask')[1]
+        sub = sub.translate({ord(c): None for c in string.whitespace})
+        # user = discord.utils.get(client.users, name=sub)
+        # print(sub)
+        # if user is None:
+        #     print("User not found")
+        # else:
+        #     print(user)
+        msg = discord.Embed(title="DM Request",
+                            description=f"{str(message.author.mention)} would like to DM {sub}",
+                            color=discord.Color.blue())
+        dmRequest = await message.channel.send(embed=msg)
+        approve = get_emote(client.guilds, ':voteYes:')
+        await dmRequest.add_reaction(approve)
+        deny = get_emote(client.guilds, ':voteNo:')
+        await dmRequest.add_reaction(deny)
 
+        await message.delete()
 
-
-
-
-
+# @client.event
+# async def on_reaction_add(reaction, user):
+#     print(reaction.message)
+#     newMsg = discord.Embed(title="Emote Vote",
+#                            description=f"{str(reaction.author.mention)} would like to DM {sub}",
+#                            color=discord.Color.blue())
 
 
 def get_emote(guilds, emote):
