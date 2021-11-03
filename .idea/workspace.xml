@@ -27,7 +27,8 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../kinkyBot-prod" />
+    <property name="settings.editor.selected.configurable" value="vcs.Git" />
     <property name="vue.rearranger.settings.migration" value="true" />
   </component>
   <component name="RecentsManager">
@@ -46,6 +47,8 @@
       <workItem from="1635442065374" duration="6969000" />
       <workItem from="1635491013250" duration="3563000" />
       <workItem from="1635629065761" duration="11793000" />
+      <workItem from="1635821208475" duration="706000" />
+      <workItem from="1635949175644" duration="732000" />
     </task>
     <servers />
   </component>

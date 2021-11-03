@@ -124,7 +124,9 @@ async def on_message(message):
                 id = id.translate({ord(c): None for c in string.whitespace})
                 url=''
                 name=''
-                # msg = await getmsg(message.channel, id)
+                channel = message.channel
+                msg = await channel.fetch_message(id)
+
 
                 try:
                     cnx = mysql.connect(user=sql['user'], password=sql['pass'],
@@ -144,6 +146,8 @@ async def on_message(message):
                     voteData = (id)
                     print(voteQuery)
                     cursor.execute(voteQuery)
+                    data = cursor.fetchall()
+                    print(data)
 
                     if cursor.rowcount > 0:
                         for (emoteName, emoteLink) in cursor:
@@ -158,15 +162,16 @@ async def on_message(message):
                         print(name)
                         print(url)
 
-                        # newMsg = discord.Embed(title="Emote Vote",
-                        #                        description=str(message.author.mention) + " Is requesting this emote be added",
-                        #                        color=discord.Color.blue())
-                        # newMsg.set_thumbnail(url=url)
-                        # newMsg.add_field(name="Emote Name", value=name,
-                        #                  inline=False)
-                        # newMsg.add_field(name="Vote ID", value=id)
-                        # newMsg.add_field(name="Vote Status", value="Closed")
-                        # await msg.edit(embed=newMsg)
+                        newMsg = discord.Embed(title="Emote Vote",
+                                               description=str(message.author.mention) + " Is requesting this emote be added",
+                                               color=discord.Color.blue())
+                        newMsg.set_thumbnail(url=url)
+                        newMsg.add_field(name="Emote Name", value=name,
+                                         inline=False)
+                        newMsg.add_field(name="Vote ID", value=id)
+                        newMsg.add_field(name="Vote Status", value="Closed")
+                        await msg.edit(embed=newMsg)
+
                         try:
                             fname = url.split('/')[-1]
                             response = requests.get(url)
