@@ -1,16 +1,3 @@
-import discord
-import requests
-import string
-import aiohttp
-from discord.utils import get
-from discord.utils import find
-from discord.ext import commands, tasks
-import json
-import mysql.connector as mysql
-from mysql.connector import errorcode
-from PIL import Image
-import re
-import os
 
 client = commands.Bot(command_prefix = '--')
 token = ''
