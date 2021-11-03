@@ -58,10 +58,10 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
-
+    guildID = message.guild.id
 
     if message.content.startswith('--emote'):
-        guildID = message.guild.id
+
         sub = message.content.split('--emote')[1]
         sub = sub.translate({ord(c): None for c in string.whitespace})
         if sub.startswith('add'):
@@ -241,6 +241,115 @@ async def on_message(message):
         await dmRequest.add_reaction(deny)
 
         await message.delete()
+
+    if message.content.startswith('--verify'):
+        sub = message.content.split('--verify')[1]
+        sub = sub.translate({ord(c): None for c in string.whitespace})
+
+        if sub.startswith("cross"):
+            sub2 = message.content.split('cross')[1]
+            sub2 = sub2.translate({ord(c): None for c in string.whitespace})
+
+            if sub2.startswith("list"):
+                try:
+                    cnx = mysql.connect(user=sql['user'], password=sql['pass'],
+                                                  host=sql['host'],
+                                                  database=sql['database'])
+                except mysql.Error as err:
+                    if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                        print("Something is wrong with your user name or password")
+                    elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                        print("Database does not exist")
+                    else:
+                        print(err)
+                else:
+                    cursor = cnx.cursor()
+
+                    voteQuery = f"SELECT id,guildName FROM `cross` WHERE guildID = '{guildID}'"
+                    print(voteQuery)
+                    cursor.execute(voteQuery)
+                    data = cursor.fetchall()
+                    print(data)
+
+                    if cursor.rowcount > 0:
+                        cross = {}
+                        for (id,guildName) in data:
+                            cross[id] = f"{guildName}"
+
+
+
+                        cursor.close()
+                        cnx.close()
+
+                        print(cross)
+                        newline = "\n"
+                        msg = discord.Embed(title="Cross Verifiable Servers",
+                                           description=f'{newline.join(f"[{key}] - {value}" for key,value in cross.items())}',
+                                           color=discord.Color.blue())
+                        crossMsg = await message.channel.send(embed=msg)
+                    else:
+                        await message.channel.send("Failed to display Cross List")
+                    await message.delete()
+
+            if sub2.startswith('add'):
+                if "staff" in [y.name.lower() for y in message.author.roles]:
+                    name = sub.split('add')[1:]
+                    guildName=""
+                    for a in name:
+                        guildName = guildName + ' ' + a
+
+                    try:
+                        cnx = mysql.connect(user=sql['user'], password=sql['pass'],
+                                            host=sql['host'],
+                                            database=sql['database'])
+                    except mysql.Error as err:
+                        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                            print("Something is wrong with your user name or password")
+                        elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                            print("Database does not exist")
+                        else:
+                            print(err)
+                    else:
+                        cursor = cnx.cursor()
+
+                        voteQuery = ("INSERT INTO `cross`"
+                                     "(guildName,guildID)"
+                                     "VALUES(%s, %s)")
+                        voteData = (guildName, guildID)
+
+                        cursor.execute(voteQuery, voteData)
+                        cnx.commit()
+                        cursor.close()
+                        cnx.close()
+                        await message.channel.send(f"{guildName} Successfully added to the Cross Verify List")
+                    await message.delete()
+                else:
+                    await message.channel.send("This Command is reserved for Staff Members")
+
+
+        if message.mentions:
+            if "staff" in [y.name.lower() for y in message.author.roles]:
+                for user in message.mentions:
+                    try:
+                        role = get(user.guild.roles, name="✨VERIFIED✨")
+                        await user.add_roles(role)
+                        await message.channel.send(f"Successfully gave {user} the role: ✨VERIFIED✨")
+                    except Exception as e:
+                        await message.channel.send(f"Failed to give {user} the role: ✨VERIFIED✨")
+                        print(e)
+            else:
+                await message.channel.send("This Command is reserved for Staff Members")
+        else:
+            msg = discord.Embed(title="Verify help",
+                                description="---------CROSS VERIFY------------\n"
+                                            "To View Cross Verifiable servers user --verify cross list\n"
+                                            "To View Cross Verifiable servers user --verify cross add <server Name>\n"
+                                            "-------------VERIFY---------------\n"
+                                            "To Verify a user use --verify @user",
+                                color=discord.Color.blue())
+            await message.channel.send(embed=msg)
+
+
 
 # @client.event
 # async def on_reaction_add(reaction, user):
