@@ -162,15 +162,15 @@ async def on_message(message):
                         print(name)
                         print(url)
 
-                        newMsg = discord.Embed(title="Emote Vote",
-                                               description=str(message.author.mention) + " Is requesting this emote be added",
-                                               color=discord.Color.blue())
-                        newMsg.set_thumbnail(url=url)
-                        newMsg.add_field(name="Emote Name", value=name,
-                                         inline=False)
-                        newMsg.add_field(name="Vote ID", value=id)
-                        newMsg.add_field(name="Vote Status", value="Closed")
-                        await msg.edit(embed=newMsg)
+                        # newMsg = discord.Embed(title="Emote Vote",
+                        #                        description=str(message.author.mention) + " Is requesting this emote be added",
+                        #                        color=discord.Color.blue())
+                        # newMsg.set_thumbnail(url=url)
+                        # newMsg.add_field(name="Emote Name", value=name,
+                        #                  inline=False)
+                        # newMsg.add_field(name="Vote ID", value=id)
+                        # newMsg.add_field(name="Vote Status", value="Closed")
+                        # await msg.edit(embed=newMsg)
 
                         try:
                             fname = url.split('/')[-1]
@@ -189,6 +189,7 @@ async def on_message(message):
 
                                 await message.channel.send("Successfully added the emoji {0.name} <{1}:{0.name}:{0.id}>!"
                                                            .format(emoji,"a" if emoji.animated else ""))
+                                os.remove(fname)
 
                             else:
                                 emoji = await message.channel.guild.create_custom_emoji(name=name, image=response.content)
