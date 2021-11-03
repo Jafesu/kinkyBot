@@ -339,7 +339,7 @@ async def on_message(message):
                         print(e)
             else:
                 await message.channel.send("This Command is reserved for Staff Members")
-        else:
+        elif not sub:
             msg = discord.Embed(title="Verify help",
                                 description="---------CROSS VERIFY------------\n"
                                             "To View Cross Verifiable servers user --verify cross list\n"
