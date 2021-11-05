@@ -326,6 +326,37 @@ async def on_message(message):
                 else:
                     await message.channel.send("This Command is reserved for Staff Members")
 
+            if sub2.startswith('revoke'):
+                if "staff" in [y.name.lower() for y in message.author.roles]:
+                    id = int(sub.split('revoke')[1:])
+                    guildName=""
+                    for a in name:
+                        guildName = guildName + ' ' + a
+
+                    try:
+                        cnx = mysql.connect(user=sql['user'], password=sql['pass'],
+                                            host=sql['host'],
+                                            database=sql['database'])
+                    except mysql.Error as err:
+                        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                            print("Something is wrong with your user name or password")
+                        elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                            print("Database does not exist")
+                        else:
+                            print(err)
+                    else:
+                        cursor = cnx.cursor()
+
+                        voteQuery = (f"DELETE FROM `cross` WHERE id = {id}")
+
+                        cursor.execute(voteQuery)
+                        cnx.commit()
+                        cursor.close()
+                        cnx.close()
+                        await message.channel.send(f"{id} Successfully removed from the Cross Verify List")
+                    await message.delete()
+                else:
+                    await message.channel.send("This Command is reserved for Staff Members")
 
         if message.mentions:
             if "staff" in [y.name.lower() for y in message.author.roles]:
@@ -349,7 +380,38 @@ async def on_message(message):
                                 color=discord.Color.blue())
             await message.channel.send(embed=msg)
 
+    if message.content.startswith('--afk'):
+        user = message.author
+        userID = user.id
+        nick = user.display_name
+        afk = True
+        try:
+            cnx = mysql.connect(user=sql['user'], password=sql['pass'],
+                                host=sql['host'],
+                                database=sql['database'])
+        except mysql.Error as err:
+            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                print("Something is wrong with your user name or password")
+            elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                print("Database does not exist")
+            else:
+                print(err)
+        else:
+            cursor = cnx.cursor()
 
+            voteQuery = ("INSERT INTO `afk`"
+                         "(userID,userNick,afk,guildID)"
+                         "VALUES(%s, %s, %s, %s)")
+            voteData = (userID, nick, afk, guildID)
+
+            cursor.execute(voteQuery, voteData)
+            cnx.commit()
+            cursor.close()
+            cnx.close()
+
+            await user.edit(nick=f"{nick}[AFK]")
+            await message.channel.send(f"{nick} Is now AFK")
+        await message.delete()
 
 # @client.event
 # async def on_reaction_add(reaction, user):
