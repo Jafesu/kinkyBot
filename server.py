@@ -1,3 +1,16 @@
+import discord
+import requests
+import string
+import aiohttp
+from discord.utils import get
+from discord.utils import find
+from discord.ext import commands, tasks
+import json
+import mysql.connector as mysql
+from mysql.connector import errorcode
+from PIL import Image
+import re
+import os
 
 client = commands.Bot(command_prefix = '--')
 token = ''
@@ -149,15 +162,15 @@ async def on_message(message):
                         print(name)
                         print(url)
 
-                        newMsg = discord.Embed(title="Emote Vote",
-                                               description=str(message.author.mention) + " Is requesting this emote be added",
-                                               color=discord.Color.blue())
-                        newMsg.set_thumbnail(url=url)
-                        newMsg.add_field(name="Emote Name", value=name,
-                                         inline=False)
-                        newMsg.add_field(name="Vote ID", value=id)
-                        newMsg.add_field(name="Vote Status", value="Closed")
-                        await msg.edit(embed=newMsg)
+                        # newMsg = discord.Embed(title="Emote Vote",
+                        #                        description=str(message.author.mention) + " Is requesting this emote be added",
+                        #                        color=discord.Color.blue())
+                        # newMsg.set_thumbnail(url=url)
+                        # newMsg.add_field(name="Emote Name", value=name,
+                        #                  inline=False)
+                        # newMsg.add_field(name="Vote ID", value=id)
+                        # newMsg.add_field(name="Vote Status", value="Closed")
+                        # await msg.edit(embed=newMsg)
 
                         try:
                             fname = url.split('/')[-1]
@@ -176,6 +189,7 @@ async def on_message(message):
 
                                 await message.channel.send("Successfully added the emoji {0.name} <{1}:{0.name}:{0.id}>!"
                                                            .format(emoji,"a" if emoji.animated else ""))
+                                os.remove(fname)
 
                             else:
                                 emoji = await message.channel.guild.create_custom_emoji(name=name, image=response.content)
@@ -312,6 +326,37 @@ async def on_message(message):
                 else:
                     await message.channel.send("This Command is reserved for Staff Members")
 
+            if sub2.startswith('revoke'):
+                if "staff" in [y.name.lower() for y in message.author.roles]:
+                    id = int(sub.split('revoke')[1:])
+                    guildName=""
+                    for a in name:
+                        guildName = guildName + ' ' + a
+
+                    try:
+                        cnx = mysql.connect(user=sql['user'], password=sql['pass'],
+                                            host=sql['host'],
+                                            database=sql['database'])
+                    except mysql.Error as err:
+                        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                            print("Something is wrong with your user name or password")
+                        elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                            print("Database does not exist")
+                        else:
+                            print(err)
+                    else:
+                        cursor = cnx.cursor()
+
+                        voteQuery = (f"DELETE FROM `cross` WHERE id = {id}")
+
+                        cursor.execute(voteQuery)
+                        cnx.commit()
+                        cursor.close()
+                        cnx.close()
+                        await message.channel.send(f"{id} Successfully removed from the Cross Verify List")
+                    await message.delete()
+                else:
+                    await message.channel.send("This Command is reserved for Staff Members")
 
         if message.mentions:
             if "staff" in [y.name.lower() for y in message.author.roles]:
@@ -325,7 +370,7 @@ async def on_message(message):
                         print(e)
             else:
                 await message.channel.send("This Command is reserved for Staff Members")
-        else:
+        elif not sub:
             msg = discord.Embed(title="Verify help",
                                 description="---------CROSS VERIFY------------\n"
                                             "To View Cross Verifiable servers user --verify cross list\n"
@@ -335,7 +380,38 @@ async def on_message(message):
                                 color=discord.Color.blue())
             await message.channel.send(embed=msg)
 
+    if message.content.startswith('--afk'):
+        user = message.author
+        userID = user.id
+        nick = user.display_name
+        afk = True
+        try:
+            cnx = mysql.connect(user=sql['user'], password=sql['pass'],
+                                host=sql['host'],
+                                database=sql['database'])
+        except mysql.Error as err:
+            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                print("Something is wrong with your user name or password")
+            elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                print("Database does not exist")
+            else:
+                print(err)
+        else:
+            cursor = cnx.cursor()
 
+            voteQuery = ("INSERT INTO `afk`"
+                         "(userID,userNick,afk,guildID)"
+                         "VALUES(%s, %s, %s, %s)")
+            voteData = (userID, nick, afk, guildID)
+
+            cursor.execute(voteQuery, voteData)
+            cnx.commit()
+            cursor.close()
+            cnx.close()
+
+            await user.edit(nick=f"{nick}[AFK]")
+            await message.channel.send(f"{nick} Is now AFK")
+        await message.delete()
 
 # @client.event
 # async def on_reaction_add(reaction, user):
