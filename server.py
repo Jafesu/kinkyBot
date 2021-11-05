@@ -328,9 +328,9 @@ async def on_message(message):
 
             if sub2.startswith('revoke'):
                 if "staff" in [y.name.lower() for y in message.author.roles]:
-                    id = int(sub.split('revoke')[1:])
+                    id = sub.split('revoke')[1:]
                     guildName=""
-                    for a in name:
+                    for a in id:
                         guildName = guildName + ' ' + a
 
                     try:
@@ -347,13 +347,13 @@ async def on_message(message):
                     else:
                         cursor = cnx.cursor()
 
-                        voteQuery = (f"DELETE FROM `cross` WHERE id = {id}")
+                        voteQuery = (f"DELETE FROM `cross` WHERE id = {guildName}")
 
                         cursor.execute(voteQuery)
                         cnx.commit()
                         cursor.close()
                         cnx.close()
-                        await message.channel.send(f"{id} Successfully removed from the Cross Verify List")
+                        await message.channel.send(f"{guildName} Successfully removed from the Cross Verify List")
                     await message.delete()
                 else:
                     await message.channel.send("This Command is reserved for Staff Members")
