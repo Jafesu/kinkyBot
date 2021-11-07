@@ -12,7 +12,7 @@ from PIL import Image
 import re
 import os
 
-client = commands.Bot(command_prefix = '--')
+client = commands.Bot(command_prefix = 'kb')
 token = ''
 sql = {}
 cnx = ''
