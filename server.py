@@ -415,49 +415,49 @@ async def on_message(message):
 
 
 
-@client.event
-async def on_message(msg):
-    # log is a coroutine, so don't forget to await the call
-    await log(msg)
-    # to avoid 'commands not working'
-    await client.process_commands(msg)
-
-
-async def log(msg):
-    # get the guild from the message
-    guild = msg.guild
-    channelID = msg.channel.id
-    # find the channel with name 'logs'
-    log_channel = discord.utils.get(guild.channels, name="server-logs")
-    if msg.channel.name != "server-logs":
-       if "verification" not in msg.channel.name:
-           try:
-               logMsg = discord.Embed(title="Message Log",
-                                      description=msg.content,
-                                      color=discord.Color.blue())
-               logMsg.add_field(name="Author", value=msg.author.mention,
-                                inline=False)
-               logMsg.add_field(name="Channel", value=msg.channel.mention,
-                                inline=False)
-               logMsg.add_field(name="Time Stamp", value=str(msg.created_at),
-                                inline=False)
-               try:
-                   if len(msg.attachments) > 0:
-                       if len(msg.attachments) > 1:
-                           for file in msg.attachments:
-                               logMsg.add_field(name=f"File Name: {file.filename}, File Type: {file.content_type}",
-                                                value=file.url,
-                                                inline=False)
-                       else:
-                           for file in msg.attachments:
-                               logMsg.set_image(url=file.url)
-               except Exception as e:
-                   print(f"Failed to add attachments: {e}")
-
-               await log_channel.send(embed=logMsg)
-           except Exception:
-               # exceptions will be raised if any of those said above, are missing
-               print("'server-logs' channel not found, or bot missing permissions")
+# @client.event
+# async def on_message(msg):
+#     # log is a coroutine, so don't forget to await the call
+#     await log(msg)
+#     # to avoid 'commands not working'
+#     await client.process_commands(msg)
+#
+#
+# async def log(msg):
+#     # get the guild from the message
+#     guild = msg.guild
+#     channelID = msg.channel.id
+#     # find the channel with name 'logs'
+#     log_channel = discord.utils.get(guild.channels, name="server-logs")
+#     if msg.channel.name != "server-logs":
+#        if "verification" not in msg.channel.name:
+#            try:
+#                logMsg = discord.Embed(title="Message Log",
+#                                       description=msg.content,
+#                                       color=discord.Color.blue())
+#                logMsg.add_field(name="Author", value=msg.author.mention,
+#                                 inline=False)
+#                logMsg.add_field(name="Channel", value=msg.channel.mention,
+#                                 inline=False)
+#                logMsg.add_field(name="Time Stamp", value=str(msg.created_at),
+#                                 inline=False)
+#                try:
+#                    if len(msg.attachments) > 0:
+#                        if len(msg.attachments) > 1:
+#                            for file in msg.attachments:
+#                                logMsg.add_field(name=f"File Name: {file.filename}, File Type: {file.content_type}",
+#                                                 value=file.url,
+#                                                 inline=False)
+#                        else:
+#                            for file in msg.attachments:
+#                                logMsg.set_image(url=file.url)
+#                except Exception as e:
+#                    print(f"Failed to add attachments: {e}")
+#
+#                await log_channel.send(embed=logMsg)
+#            except Exception:
+#                # exceptions will be raised if any of those said above, are missing
+#                print("'server-logs' channel not found, or bot missing permissions")
 
 # @client.event
 # async def on_reaction_add(reaction, user):
