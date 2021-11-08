@@ -12,7 +12,10 @@ from PIL import Image
 import re
 import os
 
-client = commands.Bot(command_prefix = 'kb')
+intents = discord.Intents.default()
+intents.members = True
+
+client = discord.Client(intents=intents)
 token = ''
 sql = {}
 cnx = ''
@@ -59,7 +62,43 @@ async def on_ready():
 # @client.event
 # async def on_message(message):
 
+@client.event
+async def on_member_join(member):
+    print(f"Welcome {member.display_name}")
+    guildID = member.guild.id
 
+    try:
+        cnx = mysql.connect(user=sql['user'], password=sql['pass'],
+                            host=sql['host'],
+                            database=sql['database'])
+    except mysql.Error as err:
+        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+            print("Something is wrong with your user name or password")
+        elif err.errno == errorcode.ER_BAD_DB_ERROR:
+            print("Database does not exist")
+        else:
+            print(err)
+    else:
+        cursor = cnx.cursor()
+
+        voteQuery = f"SELECT name FROM `user-blacklist` WHERE (name = '{member.display_name.lower()}' AND guildID = '{guildID}')"
+        print(voteQuery)
+        cursor.execute(voteQuery)
+        data = cursor.fetchall()
+        print(data)
+
+        if cursor.rowcount > 0:
+            try:
+                await member.send(
+                    "You have been blacklisted from joining this server, to appeal this ban, please join this "
+                    "server: https://discord.gg/T3Bmkm9hpf")
+                await member.guild.ban(member, reason="Blacklisted")
+            except Exception as e:
+                print(e)
+            cursor.close()
+            cnx.close()
+        else:
+            print("Not in Database ")
 
 
 @client.event
@@ -363,7 +402,7 @@ async def on_message(msg):
                     await message.channel.send("This Command is reserved for Staff Members")
 
         if message.mentions:
-            if "staff" in [y.name.lower() for y in message.author.roles]:
+            if "verifier" in [y.name.lower() for y in message.author.roles]:
                 for user in message.mentions:
                     try:
                         role = get(user.guild.roles, name="✨VERIFIED✨")
@@ -417,10 +456,49 @@ async def on_message(msg):
             await message.channel.send(f"{nick} Is now AFK")
         await message.delete()
 
+    if message.content.startswith('--blacklist'):
+        if "verifier" in [y.name.lower() for y in message.author.roles]:
+            sub = message.content.split('--blacklist')[1]
+            sub = sub.translate({ord(c): None for c in string.whitespace})
+            if sub.startswith('user'):
+                name = message.content.split('user')[1:]
+
+                try:
+                    cnx = mysql.connect(user=sql['user'], password=sql['pass'],
+                                        host=sql['host'],
+                                        database=sql['database'])
+                except mysql.Error as err:
+                    if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                        print("Something is wrong with your user name or password")
+                    elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                        print("Database does not exist")
+                    else:
+                        print(err)
+                else:
+                    cursor = cnx.cursor()
+
+                    voteQuery = ("INSERT INTO `user-blacklist`"
+                                 "(name,guildID)"
+                                 "VALUES(%s, %s)")
+                    voteData = (name.lower(), guildID)
+
+                    cursor.execute(voteQuery, voteData)
+                    cnx.commit()
+                    cursor.close()
+                    cnx.close()
+                    await message.channel.send(f"{name} Has been successfully blacklisted")
+                await message.delete()
+        else:
+            await message.channel.send("This Command is reserved for Staff Members")
+
+
+
     # log is a coroutine, so don't forget to await the call
     await log(msg)
     # to avoid 'commands not working'
-    await client.process_commands(msg)
+    # await client.process_commands(msg)
+
+
 
 
 async def log(msg):
