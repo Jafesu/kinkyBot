@@ -20,6 +20,7 @@ token = ''
 sql = {}
 cnx = ''
 
+
 def init():
     global token
     global sql
@@ -35,12 +36,13 @@ def init():
     f.close()
     sqlInit()
 
+
 def sqlInit():
     try:
         cnx = mysql.connect(user=sql['user'], password=sql['pass'],
-                                  host=sql['host'],
-                                  database=sql['database'],
-                                    auth_plugin='mysql_native_password')
+                            host=sql['host'],
+                            database=sql['database'],
+                            auth_plugin='mysql_native_password')
     except mysql.Error as err:
         if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
             print("Something is wrong with your user name or password")
@@ -51,13 +53,17 @@ def sqlInit():
     else:
         cnx.close()
 
+
 async def getmsg(ctx, msgID: int):
     msg = await ctx.fetch_message(msgID)
     return msg
+
+
 @client.event
 async def on_ready():
     print('Logged in as {0.user}'.format(client))
     await client.change_presence(activity=discord.CustomActivity('Developing KinkyBot'))
+
 
 # @client.event
 # async def on_message(message):
@@ -231,7 +237,7 @@ async def on_message(msg):
 
                                 await message.channel.send(
                                     "Successfully added the emoji {0.name} <{1}:{0.name}:{0.id}>!"
-                                    .format(emoji, "a" if emoji.animated else ""))
+                                        .format(emoji, "a" if emoji.animated else ""))
                                 os.remove(fname)
 
                             else:
@@ -239,7 +245,7 @@ async def on_message(msg):
                                                                                         image=response.content)
                                 await message.channel.send(
                                     "Successfully added the emoji {0.name} <{1}:{0.name}:{0.id}>!"
-                                    .format(emoji, "a" if emoji.animated else ""))
+                                        .format(emoji, "a" if emoji.animated else ""))
                         except:
                             await message.channel.send("failed to add the emoji")
                         await message.delete()
@@ -335,7 +341,7 @@ async def on_message(msg):
                     await message.delete()
 
             if sub2.startswith('add'):
-                if "staff" in [y.name.lower() for y in message.author.roles]:
+                if "Partner Manager" in [y.name.lower() for y in message.author.roles]:
                     name = sub.split('add')[1:]
                     guildName = ""
                     for a in name:
@@ -370,7 +376,7 @@ async def on_message(msg):
                     await message.channel.send("This Command is reserved for Staff Members")
 
             if sub2.startswith('revoke'):
-                if "staff" in [y.name.lower() for y in message.author.roles]:
+                if "Partner Manager" in [y.name.lower() for y in message.author.roles]:
                     id = sub.split('revoke')[1:]
                     guildName = ""
                     for a in id:
@@ -405,19 +411,22 @@ async def on_message(msg):
             if "verifier" in [y.name.lower() for y in message.author.roles]:
                 for user in message.mentions:
                     try:
-                        role = get(user.guild.roles, name="✨VERIFIED✨")
-                        await user.add_roles(role)
+                        verified = get(user.guild.roles, name="✨VERIFIED✨")
+                        unverified = get(user.guild.roles, name="Unverified")
+                        await user.add_roles(verified)
+                        await user.remove_roles(unverified)
                         await message.channel.send(f"Successfully gave {user} the role: ✨VERIFIED✨")
                     except Exception as e:
                         await message.channel.send(f"Failed to give {user} the role: ✨VERIFIED✨")
                         print(e)
             else:
-                await message.channel.send("This Command is reserved for Staff Members")
+                await message.channel.send("This Command is reserved for Verifying Staff Members")
         elif not sub:
             msg = discord.Embed(title="Verify help",
                                 description="---------CROSS VERIFY------------\n"
                                             "To View Cross Verifiable servers user --verify cross list\n"
-                                            "To View Cross Verifiable servers user --verify cross add <server Name>\n"
+                                            "To Add Cross Verifiable servers user --verify cross add <server Name>\n"
+                                            "To Remove Cross Verifiable servers user --verify cross revoke <server Name>\n"
                                             "-------------VERIFY---------------\n"
                                             "To Verify a user use --verify @user",
                                 color=discord.Color.blue())
@@ -457,7 +466,7 @@ async def on_message(msg):
         await message.delete()
 
     if message.content.startswith('--blacklist'):
-        if "verifier" in [y.name.lower() for y in message.author.roles]:
+        if "Staff" in [y.name.lower() for y in message.author.roles]:
             sub = message.content.split('--blacklist')[1]
             sub = sub.translate({ord(c): None for c in string.whitespace})
             if sub.startswith('user'):
@@ -491,14 +500,10 @@ async def on_message(msg):
         else:
             await message.channel.send("This Command is reserved for Staff Members")
 
-
-
     # log is a coroutine, so don't forget to await the call
     await log(msg)
     # to avoid 'commands not working'
     # await client.process_commands(msg)
-
-
 
 
 async def log(msg):
@@ -508,34 +513,56 @@ async def log(msg):
     # find the channel with name 'logs'
     log_channel = discord.utils.get(guild.channels, name="server-logs")
     if msg.channel.name != "server-logs":
-       if "verification" not in msg.channel.name:
-           try:
-               logMsg = discord.Embed(title="Message Log",
-                                      description=msg.content,
-                                      color=discord.Color.blue())
-               logMsg.add_field(name="Author", value=msg.author.mention,
-                                inline=False)
-               logMsg.add_field(name="Channel", value=msg.channel.mention,
-                                inline=False)
-               logMsg.add_field(name="Time Stamp", value=str(msg.created_at),
-                                inline=False)
-               try:
-                   if len(msg.attachments) > 0:
-                       if len(msg.attachments) > 1:
-                           for file in msg.attachments:
-                               logMsg.add_field(name=f"File Name: {file.filename}, File Type: {file.content_type}",
-                                                value=file.url,
-                                                inline=False)
-                       else:
-                           for file in msg.attachments:
-                               logMsg.set_image(url=file.url)
-               except Exception as e:
-                   print(f"Failed to add attachments: {e}")
+        if "verification" not in msg.channel.name:
+            try:
+                logMsg = discord.Embed(title="Message Log",
+                                       description=msg.content,
+                                       color=discord.Color.blue())
+                logMsg.add_field(name="Author", value=msg.author.mention,
+                                 inline=False)
+                logMsg.add_field(name="Channel", value=msg.channel.mention,
+                                 inline=False)
+                logMsg.add_field(name="Time Stamp", value=str(msg.created_at),
+                                 inline=False)
+                log.Msg.add_field(name="Message ID", value=msg.id, inline=True)
+                try:
+                    if len(msg.attachments) > 0:
+                        file = msg.attachments[0]
+                        logMsg.set_image(url=file.url)
 
-               await log_channel.send(embed=logMsg)
-           except Exception:
-               # exceptions will be raised if any of those said above, are missing
-               print("'server-logs' channel not found, or bot missing permissions")
+
+                except Exception as e:
+                    print(f"Failed to add attachments: {e}")
+
+                await log_channel.send(embed=logMsg)
+            except Exception:
+                # exceptions will be raised if any of those said above, are missing
+                print("'server-logs' channel not found, or bot missing permissions")
+
+            try:
+                for file in msg.attachments:
+                    try:
+                        logMsg = discord.Embed(title="Message Log",
+                                               description=msg.content,
+                                               color=discord.Color.blue())
+                        logMsg.add_field(name="Author", value=msg.author.mention,
+                                         inline=False)
+                        logMsg.add_field(name="Channel", value=msg.channel.mention,
+                                         inline=False)
+                        logMsg.add_field(name="Time Stamp", value=str(msg.created_at),
+                                         inline=False)
+                        log.Msg.add_field(name="Message ID", value=msg.id, inline=True)
+                        try:
+                            logMsg.set_image(url=file.url)
+                        except Exception as e:
+                            print(f"Failed to add attachments: {e}")
+
+                        await log_channel.send(embed=logMsg)
+                    except Exception:
+                        # exceptions will be raised if any of those said above, are missing
+                        print("'server-logs' channel not found, or bot missing permissions")
+            except Exception as e:
+                print(f"Unable to log additional images: {e}")
 
 @client.event
 async def on_reaction_add(reaction, user):
@@ -563,7 +590,6 @@ def get_emote(guilds, emote):
             if emote.name == emote_name:
                 matching_emote = emote
         return matching_emote
-
 
 
 init()
