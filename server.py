@@ -524,7 +524,7 @@ async def log(msg):
                                  inline=False)
                 logMsg.add_field(name="Time Stamp", value=str(msg.created_at),
                                  inline=False)
-                log.Msg.add_field(name="Message ID", value=msg.id, inline=True)
+                logMsg.add_field(name="Message ID", value=msg.id, inline=True)
                 try:
                     if len(msg.attachments) > 0:
                         file = msg.attachments[0]
@@ -535,9 +535,10 @@ async def log(msg):
                     print(f"Failed to add attachments: {e}")
 
                 await log_channel.send(embed=logMsg)
-            except Exception:
+            except Exception as e:
                 # exceptions will be raised if any of those said above, are missing
                 print("'server-logs' channel not found, or bot missing permissions")
+                print(e)
 
             try:
                 for file in msg.attachments:
@@ -551,16 +552,17 @@ async def log(msg):
                                          inline=False)
                         logMsg.add_field(name="Time Stamp", value=str(msg.created_at),
                                          inline=False)
-                        log.Msg.add_field(name="Message ID", value=msg.id, inline=True)
+                        logMsg.add_field(name="Message ID", value=msg.id, inline=True)
                         try:
                             logMsg.set_image(url=file.url)
                         except Exception as e:
                             print(f"Failed to add attachments: {e}")
 
                         await log_channel.send(embed=logMsg)
-                    except Exception:
+                    except Exception as e:
                         # exceptions will be raised if any of those said above, are missing
                         print("'server-logs' channel not found, or bot missing permissions")
+                        print(e)
             except Exception as e:
                 print(f"Unable to log additional images: {e}")
 
